@@ -2,6 +2,10 @@ from flask import Flask, request, jsonify
 import requests
 from bs4 import BeautifulSoup as bs
 import pandas as pd
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from datetime import datetime
+import pytz
 
 app = Flask(__name__)
 
@@ -76,5 +80,13 @@ def trigger():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+def schedule_task():
+    scheduler = BackgroundScheduler()
+    # Set the cron trigger to execute at 5 PM IST daily
+    trigger = CronTrigger(hour=17, minute=0, timezone=pytz.timezone('Asia/Kolkata'))
+    scheduler.add_job(execute_strategy, trigger)
+    scheduler.start()
+
 if __name__ == "__main__":
+    schedule_task()
     app.run(host='0.0.0.0', port=9000)
