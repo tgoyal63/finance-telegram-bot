@@ -55,7 +55,7 @@ def fetch_stock_data(session, url, condition, headers):
 
 def send_to_telegram(token, chat_id, message):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": message}
+    payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
     return requests.post(url, data=payload).json()
 
 def execute_strategy():
@@ -67,16 +67,21 @@ def execute_strategy():
         
         TELEGRAM_TOKEN = '7449783431:AAHqe61k6R14Z_YismA2VEJYeXsACZbpgYg'
         CHAT_ID = '-1002199303920'
-        strategy_name = "TSI >= 0 Screener"
+        strategy_name = "Strategy: TSI >= 0 Screener"
         
+        # Convert DataFrame to Markdown table format for Telegram
+        stock_data_str = stock_data.to_markdown(index=False)
+
         send_to_telegram(TELEGRAM_TOKEN, CHAT_ID, strategy_name)
-        send_to_telegram(TELEGRAM_TOKEN, CHAT_ID, stock_data.to_string())
+        send_to_telegram(TELEGRAM_TOKEN, CHAT_ID, f"```\n{stock_data_str}\n```")
+
+        return stock_data.to_html(index=False)
 
 @app.route('/trigger', methods=['GET'])
 def trigger():
     try:
-        execute_strategy()
-        return jsonify({"status": "success", "message": "Strategy executed and message sent to Telegram"}), 200
+        stock_data_html = execute_strategy()
+        return stock_data_html, 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
